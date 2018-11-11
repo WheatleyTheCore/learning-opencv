@@ -13,18 +13,16 @@ using namespace std;
 int main(int argc, char **argv)
 {
     // List of tracker types in OpenCV 3.4.1
-    string trackerTypes[8] = {"BOOSTING", "MIL", "KCF", "TLD","MEDIANFLOW", "GOTURN", "MOSSE", "CSRT"};
     // vector <string> trackerTypes(types, std::end(types));
  
     // Create a tracker
-    string trackerType = trackerTypes[2];
  
     Ptr<Tracker> tracker;
  
     tracker = TrackerKCF::create();
     // Read video
     VideoCapture video(0);
-    usleep(1000000);
+    usleep(100000);
      
     // Exit if video is not opened
     if(!video.isOpened())
@@ -39,7 +37,7 @@ int main(int argc, char **argv)
     video.retrieve(ok);
  
     // Define initial bounding box 
-    Rect2d bbox = selectROI(ok); 
+    Rect2d bbox = selectROI(ok, false); 
  
     // Uncomment the line below to select a different bounding box 
     // bbox = selectROI(frame, false); 
@@ -74,7 +72,7 @@ int main(int argc, char **argv)
         }
          
         // Display tracker type on frame
-        putText(frame, trackerType + " Tracker", Point(100,20), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(50,170,50),2);
+        putText(frame, "KCF Tracker", Point(100,20), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(50,170,50),2);
          
         // Display FPS on frame
         putText(frame, "FPS : " + to_string(int(fps)), Point(100,50), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(50,170,50), 2);
