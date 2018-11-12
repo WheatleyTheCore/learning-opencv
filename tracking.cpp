@@ -1,22 +1,20 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/tracking.hpp>
 #include <opencv2/core/ocl.hpp>
+#include "/usr/local/include/opencv2/objdetect.hpp"
 #include <unistd.h>
  
 using namespace cv;
 using namespace std;
  
-// Convert to string
-#define SSTR( x ) static_cast< std::ostringstream & >( \
-( std::ostringstream() << std::dec << x ) ).str()
- 
 int main(int argc, char **argv)
 {
-    // List of tracker types in OpenCV 3.4.1
-    // vector <string> trackerTypes(types, std::end(types));
- 
+    CascadeClassifier cascade;
+    cascade.load("/usr/local/include/opencv2/data/haarcascades/haarcascade_frontalface_alt.xml");
+    std::vector<Rect> faces;
     // Create a tracker
- 
+	double min_size = 20;
+	double max_size = 200;
     Ptr<Tracker> tracker;
  
     tracker = TrackerKCF::create();
@@ -32,20 +30,25 @@ int main(int argc, char **argv)
     } 
     
     // Read first frame 
-    Mat ok; 
+    Mat ok, gray;
+    Rect2d roi; 
     video.grab();
     video.retrieve(ok);
+    cvtColor(ok, gray, COLOR_BGR2GRAY);
+    cascade.detectMultiScale(gray, faces, 1.1, 2, 0|CASCADE_SCALE_IMAGE, Size(min_size, max_size));
+    for ( size_t i = 0; i < faces.size(); i++ ) 
+        	{
+             		Rect r = faces[i];
+                    roi = r;
+               		Scalar color = Scalar(255, 0, 0); 
+            		rectangle( ok, cvPoint(cvRound(r.x), cvRound(r.y)), 
+                       		cvPoint(cvRound((r.x + r.width-1)),  
+        	        	cvRound((r.y + r.height-1))), color, 3, 8, 0); 
+        	}
  
-    // Define initial bounding box 
-    Rect2d bbox = selectROI(ok, false); 
- 
-    // Uncomment the line below to select a different bounding box 
-    // bbox = selectROI(frame, false); 
-    // Display bounding box. 
-    rectangle(ok, bbox, Scalar( 255, 0, 0 ), 2, 1 ); 
  
     imshow("Tracking", ok); 
-    tracker->init(ok, bbox);
+    tracker->init(ok, roi);
      
     for(;;)
     {     
@@ -55,15 +58,12 @@ int main(int argc, char **argv)
         video.grab();
         video.retrieve(frame);
         // Update the tracking result
-        bool ok = tracker->update(frame, bbox);
-         
-        // Calculate Frames per second (FPS)
-        float fps = getTickFrequency() / ((double)getTickCount() - timer);
+        bool ok = tracker->update(frame, roi);
          
         if (ok)
         {
             // Tracking success : Draw the tracked object
-            rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 );
+            rectangle(frame, roi, Scalar( 255, 0, 0 ), 2, 1 );
         }
         else
         {
@@ -73,9 +73,6 @@ int main(int argc, char **argv)
          
         // Display tracker type on frame
         putText(frame, "KCF Tracker", Point(100,20), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(50,170,50),2);
-         
-        // Display FPS on frame
-        putText(frame, "FPS : " + to_string(int(fps)), Point(100,50), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(50,170,50), 2);
  
         // Display frame.
         imshow("Tracking", frame);
